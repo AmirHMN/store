@@ -1,42 +1,21 @@
 from django.db.models import Count
-from django.shortcuts import get_object_or_404
-from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework import viewsets
 from rest_framework.response import Response
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework import status
 from .serializers import ProductSerializer, CollectionSerializer
-from .models import Product, Collection
+from .models import Product, Collection, OrderItem
 
 
-class ProductList(ListCreateAPIView):
-    queryset = Product.objects.select_related('collection').all()
+class ProductViewSet(viewsets.ModelViewSet):
+    queryset = Product.objects.all().order_by('title')
     serializer_class = ProductSerializer
+    
+    def destroy(self, request, *args, **kwargs):
+        if OrderItem.objects.filter(product_id=kwargs['pk']).count() > 0:
+            return Response({'error': 'can not delete this product'}, status=status.HTTP_400_BAD_REQUEST)
+        return super().destroy(self, request, *args, **kwargs)
 
 
-class ProductDetail(RetrieveUpdateDestroyAPIView):
-    queryset = Product.objects.select_related('collection').all()
-    serializer_class = ProductSerializer
-
-    def delete(self, request, pk):
-        product = Product.objects.get(pk=pk)
-        if product.orderitem_set.count() > 0:
-            return Response({'error': 'this product has some order! you cant delete this'})
-        product.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-class CollectionList(ListCreateAPIView):
+class CollectionViewSet(viewsets.ModelViewSet):
     queryset = Collection.objects.annotate(product_count=Count('products')).all()
     serializer_class = CollectionSerializer
-
-
-class CollectionDetail(RetrieveUpdateDestroyAPIView):
-    queryset = Collection.objects.annotate(product_count=Count('products')).all()
-    serializer_class = CollectionSerializer
-
-    def delete(self, request, pk):
-        collection = get_object_or_404(Collection, pk=pk)
-        if collection.products.count() > 0:
-            return Response({'error': 'this collection has some products! you cant delete this'})
-        collection.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
