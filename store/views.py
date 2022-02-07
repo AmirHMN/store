@@ -9,7 +9,7 @@ from .models import Product, Collection, OrderItem
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all().order_by('title')
     serializer_class = ProductSerializer
-    
+
     def destroy(self, request, *args, **kwargs):
         if OrderItem.objects.filter(product_id=kwargs['pk']).count() > 0:
             return Response({'error': 'can not delete this product'}, status=status.HTTP_400_BAD_REQUEST)
