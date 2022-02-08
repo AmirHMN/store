@@ -1,19 +1,23 @@
 from django.db.models import Count
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework import viewsets
 from rest_framework import status
 from rest_framework.response import Response
+from .filters import ProductFilter
 from .serializers import ProductSerializer, CollectionSerializer, ReviewSerializer
 from .models import Product, Collection, OrderItem, Review
+from .paginations import ProductPagination
 
 
 class ProductViewSet(viewsets.ModelViewSet):
+    queryset = Product.objects.all()
     serializer_class = ProductSerializer
-
-    def get_queryset(self):
-        collection_id = self.request.query_params.get('collection_id')
-        if collection_id is not None:
-            return Product.objects.filter(collection_id=collection_id)
-        return Product.objects.all()
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = ProductFilter
+    pagination_class = ProductPagination
+    search_fields = ['title']
+    ordering_fields = ['unit_price', 'last_update']
 
     def destroy(self, request, *args, **kwargs):
         if OrderItem.objects.filter(product_id=kwargs['pk']).count() > 0:
