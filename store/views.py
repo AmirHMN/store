@@ -7,8 +7,13 @@ from .models import Product, Collection, OrderItem, Review
 
 
 class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.all().order_by('title')
     serializer_class = ProductSerializer
+
+    def get_queryset(self):
+        collection_id = self.request.query_params.get('collection_id')
+        if collection_id is not None:
+            return Product.objects.filter(collection_id=collection_id)
+        return Product.objects.all()
 
     def destroy(self, request, *args, **kwargs):
         if OrderItem.objects.filter(product_id=kwargs['pk']).count() > 0:
@@ -26,3 +31,6 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Review.objects.filter(product_id=self.kwargs['product_pk'])
+
+    def get_serializer_context(self):
+        return {'product_id': self.kwargs['product_pk']}
