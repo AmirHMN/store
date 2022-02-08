@@ -117,3 +117,6 @@ class OrderAdmin(admin.ModelAdmin):
 @admin.register(models.Review)
 class ReviewAdmin(admin.ModelAdmin):
     autocomplete_fields = ['product']
+
+
+admin.site.register(models.Cart)
