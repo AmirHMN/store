@@ -1,9 +1,9 @@
 from django.db.models import Count
 from rest_framework import viewsets
-from rest_framework.response import Response
 from rest_framework import status
-from .serializers import ProductSerializer, CollectionSerializer
-from .models import Product, Collection, OrderItem
+from rest_framework.response import Response
+from .serializers import ProductSerializer, CollectionSerializer, ReviewSerializer
+from .models import Product, Collection, OrderItem, Review
 
 
 class ProductViewSet(viewsets.ModelViewSet):
@@ -19,3 +19,10 @@ class ProductViewSet(viewsets.ModelViewSet):
 class CollectionViewSet(viewsets.ModelViewSet):
     queryset = Collection.objects.annotate(product_count=Count('products')).all()
     serializer_class = CollectionSerializer
+
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    serializer_class = ReviewSerializer
+
+    def get_queryset(self):
+        return Review.objects.filter(product_id=self.kwargs['product_pk'])
