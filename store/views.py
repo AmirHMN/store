@@ -6,6 +6,7 @@ from rest_framework import viewsets
 from rest_framework import status
 from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, ListModelMixin, \
     UpdateModelMixin
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
 from .filters import ProductFilter
@@ -13,6 +14,7 @@ from .serializers import ProductSerializer, CollectionSerializer, ReviewSerializ
     AddCartItemSerializer, CartItemSerializer, UpdateCartItemSerializer, CustomerSerializer
 from .models import Product, Collection, OrderItem, Review, Cart, CartItem, Customer
 from .paginations import ProductPagination
+from .permissions import IsAdminOrReadOnly
 
 
 class ProductViewSet(viewsets.ModelViewSet):
@@ -23,6 +25,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     pagination_class = ProductPagination
     search_fields = ['title']
     ordering_fields = ['unit_price', 'last_update']
+    permission_classes = [IsAdminOrReadOnly]
 
     def destroy(self, request, *args, **kwargs):
         if OrderItem.objects.filter(product_id=kwargs['pk']).count() > 0:
@@ -33,6 +36,7 @@ class ProductViewSet(viewsets.ModelViewSet):
 class CollectionViewSet(viewsets.ModelViewSet):
     queryset = Collection.objects.annotate(product_count=Count('products')).all()
     serializer_class = CollectionSerializer
+    permission_classes = [IsAdminOrReadOnly]
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -68,11 +72,12 @@ class CartItemViewSet(viewsets.ModelViewSet):
         return CartItem.objects.filter(cart_id=self.kwargs['cart_pk'])
 
 
-class CustomerViewSet(CreateModelMixin, RetrieveModelMixin, UpdateModelMixin, GenericViewSet):
+class CustomerViewSet(viewsets.ModelViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
+    permission_classes = [IsAdminUser]
 
-    @action(detail=False, methods=['GET', 'PUT'])
+    @action(detail=False, methods=['GET', 'PUT'], permission_classes=[IsAuthenticated])
     def me(self, request):
         user_id = request.user.id
         customer, created = Customer.objects.get_or_create(user_id=user_id)
