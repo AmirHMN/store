@@ -4,15 +4,13 @@ from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework import viewsets
 from rest_framework import status
-from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, ListModelMixin, \
-    UpdateModelMixin
+from rest_framework.mixins import *
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
 from .filters import ProductFilter
-from .serializers import ProductSerializer, CollectionSerializer, ReviewSerializer, CartSerializer, \
-    AddCartItemSerializer, CartItemSerializer, UpdateCartItemSerializer, CustomerSerializer
-from .models import Product, Collection, OrderItem, Review, Cart, CartItem, Customer
+from .serializers import *
+from .models import *
 from .paginations import ProductPagination
 from .permissions import IsAdminOrReadOnly
 
@@ -89,3 +87,29 @@ class CustomerViewSet(viewsets.ModelViewSet):
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data)
+
+
+class OrderViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        serializer = CreateOrderSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        order = serializer.save()
+        serializer = OrderSerializer(order)
+        return Response(serializer.data)
+
+    def get_serializer_context(self):
+        return {'user_id': self.request.user.id}
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CreateOrderSerializer
+        return OrderSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return Order.objects.all()
+        customer = Customer.objects.get(user_id=user.id)
+        return Order.objects.filter(customer_id=customer.id)
