@@ -2,7 +2,7 @@ from django.db.models import Count
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter, OrderingFilter
-from rest_framework import viewsets
+from rest_framework import viewsets, permissions
 from rest_framework import status
 from rest_framework.mixins import *
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
@@ -90,10 +90,15 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
 
 class OrderViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated]
+    http_method_names = ['get', 'patch', 'delete', 'head', 'option']
+
+    def get_permissions(self):
+        if self.request.method in ['PATCH', 'DELETE']:
+            return [IsAdminUser()]
+        return [IsAuthenticated()]
 
     def create(self, request, *args, **kwargs):
-        serializer = CreateOrderSerializer(data=request.data)
+        serializer = CreateOrderSerializer(data=request.data, context={'user_id': self.request.user.id})
         serializer.is_valid(raise_exception=True)
         order = serializer.save()
         serializer = OrderSerializer(order)
