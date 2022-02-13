@@ -3,7 +3,7 @@ from uuid import uuid4
 from django.core.validators import MinValueValidator
 from django.db import models
 
-from storefront import settings
+from django.conf import settings
 
 
 class Promotion(models.Model):
