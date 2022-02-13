@@ -47,10 +47,7 @@ class ProductAdmin(admin.ModelAdmin):
     @admin.action(description='Clear inventory')
     def clear_inventory(self, request, queryset):
         updated_count = queryset.update(inventory=0)
-        self.message_user(
-            request,
-            f'{updated_count} products were successfully updated.'
-        )
+        self.message_user(request, f'{updated_count} products were successfully updated.', messages.ERROR)
 
 
 @admin.register(models.Collection)
@@ -113,11 +110,3 @@ class OrderAdmin(admin.ModelAdmin):
     autocomplete_fields = ['customer']
     inlines = [OrderItemInline]
     list_display = ['id', 'placed_at', 'customer']
-
-
-@admin.register(models.Review)
-class ReviewAdmin(admin.ModelAdmin):
-    autocomplete_fields = ['product']
-
-
-admin.site.register(models.Cart)
