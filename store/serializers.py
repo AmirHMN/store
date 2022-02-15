@@ -174,6 +174,10 @@ class CreateOrderSerializer(serializers.Serializer):
 
 
 class ProductImageSerializer(serializers.ModelSerializer):
+
+    def create(self, validated_data):
+        return ProductImage.objects.create(product_id=self.context['product_id'], **validated_data)
+
     class Meta:
         model = ProductImage
-        fields = ['id', 'image']
+        fields = ['product_id', 'id', 'image']
